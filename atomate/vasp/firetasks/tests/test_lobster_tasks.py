@@ -98,7 +98,7 @@ class TestRunLobster(unittest.TestCase):
     def test_run_task(self):
         with mock.patch("atomate.vasp.firetasks.lobster_tasks.Custodian") as mock_c:
             instance = mock_c.return_value
-            instance.run_task.return_value = 'test'
+            instance.run.return_value = 'test'
             t = RunLobster(lobster_cmd='', gzip_output=True, gzip_WAVECAR=False, strict_handlers_validators=False)
             t.run_task(fw_spec={})
             t = RunLobster(lobster_cmd='', gzip_output=False, gzip_WAVECAR=False, strict_handlers_validators=False)
