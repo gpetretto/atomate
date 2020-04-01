@@ -4,12 +4,10 @@
 import os
 import unittest
 
-from pymatgen.core.lattice import Lattice
-from pymatgen.core.structure import Structure
-from pymatgen.transformations.standard_transformations import RotationTransformation
-
 from atomate.vasp.fireworks.core import StaticFW
 from atomate.vasp.fireworks.lobster import LobsterFW
+from pymatgen.core.lattice import Lattice
+from pymatgen.core.structure import Structure
 
 __author__ = 'Janine George, Guido Petretto'
 __email__ = 'janine.george@uclouvain.be'
@@ -30,26 +28,14 @@ class TestLobsterFireworks(unittest.TestCase):
         self.structure = Structure(lattice, ["Si", "Si"], coords)
 
     def testStaticFW(self):
-        static_fw=StaticFW(structure=self.structure).name
+        static_fw = StaticFW(structure=self.structure).name
         self.assertEqual(LobsterFW(structure=self.structure, parents=static_fw).name, "Si-lobster_calculation")
-        lobster_fw=LobsterFW(prev_calc_dir="/")
+        lobster_fw = LobsterFW(prev_calc_dir="/")
         self.assertEqual(lobster_fw.name, "unknown-lobster_calculation")
-        self.assertEqual(lobster_fw.tasks[0]["calc_dir"],"/")
-        #check for ValueError when no parent or calc_dir are provided
+        self.assertEqual(lobster_fw.tasks[0]["calc_dir"], "/")
+        # check for ValueError when no parent or calc_dir are provided
         with self.assertRaises(ValueError):
             LobsterFW()
- 
-
-
-
-
-
-
-
-
-
-
-
 
 
 if __name__ == "__main__":
