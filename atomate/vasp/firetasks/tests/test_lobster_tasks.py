@@ -48,7 +48,6 @@ class TestWriteLobsterinputfromIO(AtomateTest):
     def tearDown(self):
         pass
 
-
 class TestLobsterRunToDb(AtomateTest):
 
     def setUp(self):
@@ -63,8 +62,7 @@ class TestLobsterRunToDb(AtomateTest):
                     load_dict = json.load(f)
                 self.assertEqual(load_dict["formula_pretty"], 'K2Sn2O3')
                 self.assertListEqual(load_dict["output"]["chargespilling"], [0.008, 0.008])
-        # TODO: which kind of tests are missing? should I test the database connection?
-        # test insertion into database
+
         with cd(os.path.join(module_dir, "./../../test_files", "lobster", "vasp_lobster_output")):
             with ScratchDir('.', copy_from_current_on_enter=True) as d:
                 ft = LobsterRunToDb(calc_loc=True, db_file=DB_FILE)
@@ -85,10 +83,15 @@ class TestLobsterRunToDb(AtomateTest):
                 self.assertListEqual(load_dict["output"]["chargespilling"], [0.0141, 0.0141])
 
     def tearDown(self):
-        pass
+        db = self.get_task_database()
+        for coll in db.collection_names():
+            if coll != "system.indexes":
+                 db[coll].drop()
 
-#Tests for fake lobster?
-
+# class TestRunLobster(unittest.TestCase)
+#     def setUp(self) -> None:
+#
+#         pass
 
 if __name__ == '__main__':
     unittest.main()

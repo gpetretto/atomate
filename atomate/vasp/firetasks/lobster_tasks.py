@@ -122,6 +122,7 @@ class LobsterRunToDb(FiretaskBase):
             of this key in the fw_spec.
     """
     # TODO: which ones are required, which are optional
+    # TODO: check if other files can be saved as well
     optional_params = ["calc_dir", "calc_loc", "additional_fields", "db_file", "fw_spec_field"]
 
     def run_task(self, fw_spec):
@@ -204,7 +205,7 @@ class LobsterRunToDb(FiretaskBase):
 @explicit_serialize
 class RunLobsterFake(FiretaskBase):
     """
-     Lobster Emulator; not yet tested
+     Lobster Emulator
      Required params:
          ref_dir (string): Path to reference lobster run directory with input files in the folder
             named 'inputs' and output files in the folder named 'outputs'.
