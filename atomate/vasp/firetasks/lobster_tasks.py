@@ -8,15 +8,12 @@ from atomate.common.firetasks.glue_tasks import get_calc_loc
 from atomate.utils.utils import env_chk, get_meta_from_structure
 from atomate.vasp.database import VaspCalcDb
 from custodian import Custodian
-
-from custodian.lobster.jobs import LobsterJob
 from custodian.lobster.handlers import ChargeSpillingValidator, EnoughBandsValidator, LobsterFilesValidator, \
     CrashErrorHandler
+from custodian.lobster.jobs import LobsterJob
 from fireworks import FiretaskBase, explicit_serialize, FWAction
-from fireworks.core.firework import Workflow
 from fireworks.utilities.fw_serializers import DATETIME_HANDLER
 from monty.json import jsanitize
-from monty.shutil import compress_file
 from pymatgen.core.structure import Structure
 from pymatgen.io.lobster import Lobsterout, Lobsterin
 
@@ -178,7 +175,7 @@ class LobsterRunToDb(FiretaskBase):
         task_doc.update(get_meta_from_structure(struct))
         if vasp_calc_dir != None:
             task_doc["vasp_dir_name"] = vasp_calc_dir
-        else: 
+        else:
             task_doc["vasp_dir_name"] = vasp_calc_loc["path"]
         task_doc["dir_name"] = os.getcwd()
 
@@ -204,40 +201,6 @@ class LobsterRunToDb(FiretaskBase):
         return FWAction()
 
 
-#TODO: adapat it to make it usable with more complex workflows (more than 1 lobster calc)
-def use_fake_lobster(original_wf, ref_dirs, params_to_check=None, gzipped_output=False, gzipped_WAVECAR=False,
-                     backup=False):
-    """
-    NOT TESTED YET
-    Replaces all tasks with "RunLobster" to be RunLobsterFake. Thus, we do not
-    actually run Lobster but copy pre-determined inputs and outputs.
-    Args:
-        original_wf (Workflow)
-        ref_dirs (dict): key=firework name, value=path to the reference lobster calculation directory
-        params_to_check (list): optional list of lobsterin parameters that are checked
-        gzipped_output (bool): if true, everything except WAVECAR will be gzipped
-        gzipped_WAVECAR (bool): if true, WAVECAR will be gzipped
-        backup (bool): if true, lobsterin will be saved to lobsterin.orig
-    Returns:
-        Workflow
-    """
-    if not params_to_check:
-        params_to_check = ["basisSet", "cohpGenerator"]
-    for idx_fw, fw in enumerate(original_wf.fws):
-        for job_type in ref_dirs.keys():
-            if job_type in fw.name:
-                for idx_t, t in enumerate(fw.tasks):
-                    print(t)
-                    print(job_type)
-                    if "RunLobster" in str(t):
-                        original_wf.fws[idx_fw].tasks[idx_t] = \
-                            RunLobsterFake(ref_dir=ref_dirs[job_type],
-                                           params_to_check=params_to_check, gzipped_output=gzipped_output,
-                                           gzipped_WAVECAR=gzipped_WAVECAR, backup=backup)
-
-    return original_wf
-
-
 @explicit_serialize
 class RunLobsterFake(FiretaskBase):
     """
@@ -250,7 +213,7 @@ class RunLobsterFake(FiretaskBase):
          check_lobsterin (bool): whether to confirm the lobsterin params (default: True)
      """
     required_params = ["ref_dir"]
-    optional_params = ["params_to_check", "check_lobsterin", "gzipped_output", "gzipped_WAVECAR", "backup"]
+    optional_params = ["params_to_check", "check_lobsterin"]
 
     def run_task(self, fw_spec):
         self._verify_inputs()
@@ -264,7 +227,7 @@ class RunLobsterFake(FiretaskBase):
 
         # Check lobsterin
         if self.get("check_lobsterin", True):
-            #TODO understand this class better
+            # TODO understand this class better
             ref_lobsterin = Lobsterin.from_file(os.path.join(self["ref_dir"], "inputs", "lobsterin"))
             params_to_check = self.get("params_to_check", [])
             defaults = {"basisSet": "pbeVaspFit2015", "cohpEndEnergy": 5.0}
@@ -289,22 +252,22 @@ class RunLobsterFake(FiretaskBase):
             if os.path.isfile(full_file_name):
                 shutil.copy(full_file_name, os.getcwd())
 
-        if self.get("gzipped_WAVECAR", False):
-            for file in LOBSTEROUTPUT_FILES:
-                if os.path.exists(file):
-                    compress_file(file, compression="gz")
-            for file in LOBSTERINPUT_FILES:
-                if os.path.exists(file):
-                    compress_file(file, compression="gz")
-            if self.get("backup", False):
-                if os.path.exists("lobsterin.orig"):
-                    compress_file("lobsterin.orig", compression="gz")
-            for file in VASP_OUTPUT_FILES:
-                if self.get("gzipped_WAVECAR", False):
-                    if os.path.exists(file):
-                        compress_file(file, compression="gz")
-                else:
-                    if os.path.exists(file) and file != 'WAVECAR':
-                        compress_file(file, compression="gz")
+        # if self.get("gzipped_WAVECAR", False):
+        #     for file in LOBSTEROUTPUT_FILES:
+        #         if os.path.exists(file):
+        #             compress_file(file, compression="gz")
+        #     for file in LOBSTERINPUT_FILES:
+        #         if os.path.exists(file):
+        #             compress_file(file, compression="gz")
+        #     if self.get("backup", False):
+        #         if os.path.exists("lobsterin.orig"):
+        #             compress_file("lobsterin.orig", compression="gz")
+        #     for file in VASP_OUTPUT_FILES:
+        #         if self.get("gzipped_WAVECAR", False):
+        #             if os.path.exists(file):
+        #                 compress_file(file, compression="gz")
+        #         else:
+        #             if os.path.exists(file) and file != 'WAVECAR':
+        #                 compress_file(file, compression="gz")
 
         logger.info("RunLobsterFake: ran fake lobster, generated outputs")
