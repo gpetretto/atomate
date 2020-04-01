@@ -24,6 +24,9 @@ LOBSTEROUTPUT_FILES = ["lobsterout", "CHARGE.lobster", "COHPCAR.lobster", "COOPC
 
 VASP_OUTPUT_FILES = ["OUTCAR", "vasprun.xml", "CHG", "CHGCAR", "CONTCAR", "INCAR", "KPOINTS", "POSCAR", "POTCAR",
                      "DOSCAR", "EIGENVAL", "IBZKPT", "OSZICAR", "PCDAT", "PROCAR", "REPORT", "WAVECAR", "XDATCAR"]
+VASP_OUTPUT_FILES_without_WAVECAR = ["OUTCAR", "vasprun.xml", "CHG", "CHGCAR", "CONTCAR", "INCAR", "KPOINTS", "POSCAR",
+                                     "POTCAR",
+                                     "DOSCAR", "EIGENVAL", "IBZKPT", "OSZICAR", "PCDAT", "PROCAR", "REPORT", "XDATCAR"]
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 logger = logging.getLogger(__name__)
@@ -64,7 +67,6 @@ class WriteLobsterinputfromIO(FiretaskBase):
         lobsterinput.write_lobsterin("lobsterin")
 
 
-# TODO: can we test this somehow?
 @explicit_serialize
 class RunLobster(FiretaskBase):
     """
@@ -84,10 +86,9 @@ class RunLobster(FiretaskBase):
         gzip_output = self.get("gzip_output", False)
         gzip_WAVECAR = self.get("gzip_WAVECAR", False)
         if gzip_WAVECAR:
-            # TODO: include the changes in the lobster job correctly
             add_files_to_gzip = VASP_OUTPUT_FILES
         else:
-            add_files_to_gzip = VASP_OUTPUT_FILES.remove("WAVECAR")
+            add_files_to_gzip = VASP_OUTPUT_FILES_without_WAVECAR
 
         strict_handlers_validators = self.get("strict_handlers_validators", False)
         # LobsterJob gzips output files, Custodian would gzip all output files (even slurm)

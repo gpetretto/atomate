@@ -1,10 +1,11 @@
 import json
 import os
 import unittest
+from unittest import mock
 
 from atomate.utils.testing import AtomateTest
 from atomate.utils.testing import DB_DIR
-from atomate.vasp.firetasks.lobster_tasks import WriteLobsterinputfromIO, LobsterRunToDb
+from atomate.vasp.firetasks.lobster_tasks import WriteLobsterinputfromIO, LobsterRunToDb, RunLobster
 from fireworks.utilities.fw_serializers import load_object
 from monty.os import cd
 from monty.tempfile import ScratchDir
@@ -48,6 +49,7 @@ class TestWriteLobsterinputfromIO(AtomateTest):
     def tearDown(self):
         pass
 
+
 class TestLobsterRunToDb(AtomateTest):
 
     def setUp(self):
@@ -86,12 +88,27 @@ class TestLobsterRunToDb(AtomateTest):
         db = self.get_task_database()
         for coll in db.collection_names():
             if coll != "system.indexes":
-                 db[coll].drop()
+                db[coll].drop()
 
-# class TestRunLobster(unittest.TestCase)
-#     def setUp(self) -> None:
-#
-#         pass
+
+class TestRunLobster(unittest.TestCase):
+    def setUp(self) -> None:
+        pass
+
+    def test_run_task(self):
+        with mock.patch("atomate.vasp.firetasks.lobster_tasks.Custodian") as mock_c:
+            instance = mock_c.return_value
+            instance.run_task.return_value = 'test'
+            t = RunLobster(lobster_cmd='', gzip_output=True, gzip_WAVECAR=False, strict_handlers_validators=False)
+            t.run_task(fw_spec={})
+            t = RunLobster(lobster_cmd='', gzip_output=False, gzip_WAVECAR=False, strict_handlers_validators=False)
+            t.run_task(fw_spec={})
+            t = RunLobster(lobster_cmd='', gzip_output=False, gzip_WAVECAR=True, strict_handlers_validators=False)
+            t.run_task(fw_spec={})
+            t = RunLobster(lobster_cmd='', gzip_output=False, gzip_WAVECAR=True, strict_handlers_validators=True)
+            t.run_task(fw_spec={})
+
+
 
 if __name__ == '__main__':
     unittest.main()
