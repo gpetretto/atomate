@@ -1,0 +1,22 @@
+[
+    {
+        "job": {
+            "@module": "custodian.lobster.jobs",
+            "@class": "LobsterJob",
+            "@version": "2019.8.24",
+            "lobster_cmd": null,
+            "output_file": "lobster.out",
+            "stderr_file": "std_err_lobster.txt",
+            "gzipped": false,
+            "add_files_to_gzip": null,
+            "backup": true
+        },
+        "corrections": [],
+        "handler": null,
+        "validator": null,
+        "max_errors": false,
+        "max_errors_per_job": false,
+        "max_errors_per_handler": false,
+        "nonzero_return_code": false
+    }
+]
