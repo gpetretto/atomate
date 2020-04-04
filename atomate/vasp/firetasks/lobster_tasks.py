@@ -1,12 +1,11 @@
 import json
-import json
 import logging
 import os
 import shutil
 
 from atomate.common.firetasks.glue_tasks import get_calc_loc
 from atomate.utils.utils import env_chk, get_meta_from_structure
-from atomate.vasp.database import VaspCalcDb
+from atomate.vasp.database import VaspCalcDb, put_file_in_gridfs
 from custodian import Custodian
 from custodian.lobster.handlers import ChargeSpillingValidator, EnoughBandsValidator, LobsterFilesValidator, \
     CrashErrorHandler
@@ -14,8 +13,11 @@ from custodian.lobster.jobs import LobsterJob
 from fireworks import FiretaskBase, explicit_serialize, FWAction
 from fireworks.utilities.fw_serializers import DATETIME_HANDLER
 from monty.json import jsanitize
+from monty.os.path import zpath
+from monty.serialization import loadfn
 from pymatgen.core.structure import Structure
 from pymatgen.io.lobster import Lobsterout, Lobsterin
+
 
 LOBSTERINPUT_FILES = ["lobsterin"]
 LOBSTEROUTPUT_FILES = ["lobsterout", "CHARGE.lobster", "COHPCAR.lobster", "COOPCAR.lobster", "DOSCAR.lobster",
@@ -75,11 +77,16 @@ class RunLobster(FiretaskBase):
         lobster_cmd (str): command to run lobster
         gzip_output (bool): If true, output (except WAVECAR) will be gzipped.
         gzip_WAVECAR (bool): If true, WAVECAR will be gzipped
-        strict_handlers_validators (bool): If True, the additional validator of the charge spilling will be used
+        handler_group (str or [ErrorHandler]): group of handlers to use. See handler_groups dict in the code for
+            the groups and complete list of handlers in each group. Alternatively, you can
+            specify a list of ErrorHandler objects.
+        validator_group (str or [Validator]): group of validators to use. See validator_groups dict in the
+            code for the groups and complete list of validators in each group. Alternatively, you can
+            specify a list of Validator objects.
     """
 
     required_params = []
-    optional_params = ["lobster_cmd", "gzip_output", "gzip_WAVECAR", "strict_handlers_validators"]
+    optional_params = ["lobster_cmd", "gzip_output", "gzip_WAVECAR", "handler_group", "validator_group"]
 
     def run_task(self, fw_spec):
         lobster_cmd = env_chk(self.get('lobster_cmd'), fw_spec)
@@ -90,20 +97,40 @@ class RunLobster(FiretaskBase):
         else:
             add_files_to_gzip = VASP_OUTPUT_FILES_without_WAVECAR
 
-        strict_handlers_validators = self.get("strict_handlers_validators", False)
+        handler_groups = {
+            "default": [CrashErrorHandler(output_filename="lobsterout")],
+            "no_handler": []
+            }
+        validator_groups = {
+            "default": [LobsterFilesValidator(),
+                        EnoughBandsValidator(output_filename="lobsterout")],
+            "strict": [ChargeSpillingValidator(output_filename="lobsterout"), LobsterFilesValidator(),
+                       EnoughBandsValidator(output_filename="lobsterout")],
+            "no_validator": []
+            }
+
+        handler_group = self.get("handler_group", "default")
+        if isinstance(handler_group, str):
+            handlers = handler_groups[handler_group]
+        else:
+            handlers = handler_group
+
+        # TODO: should ChargeSpillingValdator be included? This might lead to confusion!
+        validator_group = self.get("validator_group", "default")
+        if isinstance(validator_group, str):
+            validators = validator_groups[validator_group]
+        else:
+            validators = handler_group
+
         # LobsterJob gzips output files, Custodian would gzip all output files (even slurm)
         jobs = [LobsterJob(lobster_cmd=lobster_cmd, output_file="lobster.out", stderr_file="std_err_lobster.txt",
                            gzipped=gzip_output, add_files_to_gzip=add_files_to_gzip)]
-        handlers = [CrashErrorHandler(output_filename="lobsterout")]
-        # TODO: should ChargeSpillingValdator be included? This might lead to confusion!
-        if strict_handlers_validators:
-            validators = [ChargeSpillingValidator(output_filename="lobsterout"), LobsterFilesValidator(),
-                          EnoughBandsValidator(output_filename="lobsterout")]
-        else:
-            validators = [LobsterFilesValidator(),
-                          EnoughBandsValidator(output_filename="lobsterout")]
         c = Custodian(handlers=handlers, jobs=jobs, validators=validators, gzipped_output=False, max_errors=5)
         c.run()
+
+        if os.path.exists(zpath("custodian.json")):
+            stored_custodian_data = {"custodian": loadfn(zpath("custodian.json"))}
+            return FWAction(stored_data=stored_custodian_data)
 
 
 @explicit_serialize
@@ -121,10 +148,14 @@ class LobsterRunToDb(FiretaskBase):
             Supports env_chk. Default: write data to JSON file.
         fw_spec_field (str): if set, will update the task doc with the contents
             of this key in the fw_spec.
+        store_all_outputs (bool): if True the output files that are not parsed
+            with python objects will be stored in the gridfs of the chosen DB
+            as simple files. Default False.
     """
     # TODO: which ones are required, which are optional
     # TODO: check if other files can be saved as well
-    optional_params = ["calc_dir", "calc_loc", "additional_fields", "db_file", "fw_spec_field"]
+    optional_params = ["calc_dir", "calc_loc", "additional_fields", "db_file", "fw_spec_field",
+                       "store_all_outputs"]
 
     def run_task(self, fw_spec):
 
@@ -198,8 +229,25 @@ class LobsterRunToDb(FiretaskBase):
         else:
             db = VaspCalcDb.from_db_file(db_file, admin=True)
             db.collection = db.db["lobster"]
-            db.collection.insert(task_doc)
+            if self.get("store_all_outputs", False):
+                files_to_save = ["ICOHPLIST", "ICOOPLIST", "COHPCAR",
+                                 "COOPCAR", "GROSSPOP", "CHARGE", "DOSCAR"]
+                for fn in files_to_save:
+                    cn = "lobster_" + fn.lower()
+                    fs_id = None
+                    if os.path.isfile(fn + ".lobster"):
+                        fs_id = put_file_in_gridfs(fn + ".lobster", db, collection_name=cn,
+                                                   compress=True)
+                    elif os.path.isfile(fn + ".lobster.gz"):
+                        fs_id = put_file_in_gridfs(fn + ".lobster", db, collection_name=cn,
+                                                   compress=False, compression_type="zlib")
+
+                    if fs_id:
+                        task_doc[fn.lower()+"_id"] = fs_id
+
+            db.insert(task_doc)
             logger.info("Lobster calculation is complete.")
+
         return FWAction()
 
 

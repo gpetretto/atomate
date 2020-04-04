@@ -74,7 +74,8 @@ def get_wf_lobster(structure: Structure, calculationtype: str = 'standard', dele
                          delete_wavecar=delete_all_wavecars,
                          delete_wavecar_previous_fw=delete_all_wavecars, lobster_cmd=lobster_cmd,
                          db_file=db_file, lobsterin_key_dict=user_lobsterin_settings,
-                         user_supplied_basis=user_supplied_basis, strict_handlers_validators=True,
+                         user_supplied_basis=user_supplied_basis, handler_group="default",
+                         validator_group="strict",
                          lobstertodb_kwargs={"additional_fields": {"material_id": material_id}}))
 
     workflow = Workflow(fws, name="LobsterWorkflow")
@@ -153,7 +154,8 @@ def get_wf_lobster_test_basis(structure: Structure, calculationtype: str = 'stan
                       delete_wavecar_previous_fw=False, lobster_cmd=lobster_cmd,
                       db_file=db_file, user_supplied_basis=basis_dict,
                       lobsterin_key_dict=user_lobsterin_settings,
-                      strict_handlers_validators=False, name="lobster_calculation_{}".format(ibasis),
+                      handler_group="default", validator_group="strict",
+                      name="lobster_calculation_{}".format(ibasis),
                       lobstertodb_kwargs={"additional_fields": {"material_id": material_id, "basis_id": ibasis,
                                                                 "number_lobster_runs": len(all_basis)}}))
 
