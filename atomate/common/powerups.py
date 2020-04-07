@@ -30,8 +30,6 @@ def set_queue_adapter(original_wf: Workflow, queueadapter: dict = None,
     for idx_fw, idx_t in get_fws_and_tasks(original_wf,
                                            fw_name_constraint=fw_name_constraint,
                                            task_name_constraint=task_name_constraint):
-        print(idx_fw)
-        print(idx_t)
         q = original_wf.fws[idx_fw].spec.get("_queueadapter", {})
         q.update(queueadapter)
         original_wf.fws[idx_fw].spec["_queueadapter"] = q

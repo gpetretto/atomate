@@ -61,7 +61,7 @@ class TestLobsterRunToDb(AtomateTest):
         cls.vasp_si_dir = os.path.join(module_dir, "./../../test_files", "lobster", "si_vasp_lobster2/lobster/outputs")
 
     def setUp(self):
-        super(TestRunLobster, self).setUp(lpad=False)
+        super(TestLobsterRunToDb, self).setUp(lpad=False)
 
     def test_jsonfile(self):
         copy_r(self.vasp_dir, ".")
@@ -132,7 +132,7 @@ class TestRunLobster(AtomateTest):
             t = RunLobster(lobster_cmd='', gzip_output=True, gzip_WAVECAR=False)
             self.assertIsNone(t.run_task(fw_spec={}))
             mock_c.assert_called_once()
-            self.assertEqual(len(mock_c.call_args[1]["handlers"]), 1)
+            self.assertEqual(len(mock_c.call_args[1]["handlers"]), 0)
             self.assertEqual(len(mock_c.call_args[1]["validators"]), 2)
 
             mock_c.reset_mock()

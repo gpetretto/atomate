@@ -7,8 +7,7 @@ from atomate.common.firetasks.glue_tasks import get_calc_loc
 from atomate.utils.utils import env_chk, get_meta_from_structure
 from atomate.vasp.database import VaspCalcDb, put_file_in_gridfs
 from custodian import Custodian
-from custodian.lobster.handlers import ChargeSpillingValidator, EnoughBandsValidator, LobsterFilesValidator, \
-    CrashErrorHandler
+from custodian.lobster.handlers import ChargeSpillingValidator, EnoughBandsValidator, LobsterFilesValidator
 from custodian.lobster.jobs import LobsterJob
 from fireworks import FiretaskBase, explicit_serialize, FWAction
 from fireworks.utilities.fw_serializers import DATETIME_HANDLER
@@ -17,7 +16,6 @@ from monty.os.path import zpath
 from monty.serialization import loadfn
 from pymatgen.core.structure import Structure
 from pymatgen.io.lobster import Lobsterout, Lobsterin
-
 
 LOBSTERINPUT_FILES = ["lobsterin"]
 LOBSTEROUTPUT_FILES = ["lobsterout", "CHARGE.lobster", "COHPCAR.lobster", "COOPCAR.lobster", "DOSCAR.lobster",
@@ -98,16 +96,16 @@ class RunLobster(FiretaskBase):
             add_files_to_gzip = VASP_OUTPUT_FILES_without_WAVECAR
 
         handler_groups = {
-            "default": [CrashErrorHandler(output_filename="lobsterout")],
+            "default": [],
             "no_handler": []
-            }
+        }
         validator_groups = {
             "default": [LobsterFilesValidator(),
                         EnoughBandsValidator(output_filename="lobsterout")],
             "strict": [ChargeSpillingValidator(output_filename="lobsterout"), LobsterFilesValidator(),
                        EnoughBandsValidator(output_filename="lobsterout")],
             "no_validator": []
-            }
+        }
 
         handler_group = self.get("handler_group", "default")
         if isinstance(handler_group, str):
@@ -115,7 +113,6 @@ class RunLobster(FiretaskBase):
         else:
             handlers = handler_group
 
-        # TODO: should ChargeSpillingValdator be included? This might lead to confusion!
         validator_group = self.get("validator_group", "default")
         if isinstance(validator_group, str):
             validators = validator_groups[validator_group]
@@ -243,7 +240,7 @@ class LobsterRunToDb(FiretaskBase):
                                                    compress=False, compression_type="zlib")
 
                     if fs_id:
-                        task_doc[fn.lower()+"_id"] = fs_id
+                        task_doc[fn.lower() + "_id"] = fs_id
 
             db.insert(task_doc)
             logger.info("Lobster calculation is complete.")
