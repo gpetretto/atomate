@@ -244,9 +244,6 @@ class Testwf_lobster_test_basis(AtomateTest):
         # if VASP_CMD and LOBSTER_CMD:
         #     self._single_Vasp_Lobster(fake=False, fw_id=7)
 
-    def tearDown(self):
-        pass
-
 
 if __name__ == "__main__":
     unittest.main()
