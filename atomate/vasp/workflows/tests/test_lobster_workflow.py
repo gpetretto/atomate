@@ -21,12 +21,8 @@ LOBSTER_CMD = None
 DEBUG = True
 DB_FILE = os.path.join(DB_DIR, "db.json")
 refs_dirs_si_vasp = {"static": os.path.join(module_dir, "../../test_files/lobster/si_vasp_lobster/vasp/")}
-# refs_dirs_si_vasp2 = {"static": os.path.join(module_dir, "../../test_files/lobster/si_vasp_lobster2/vasp/")}
 refs_dirs_si_lobster = {
     "lobster_calculation": os.path.join(module_dir, "../../test_files/lobster/si_vasp_lobster/lobster")}
-# refs_dirs_si_lobster2 = {
-#     "lobster_calculation": os.path.join(module_dir, "../../lobster/test_files/lobster/si_vasp_lobster2/lobster")}
-
 refs_dirs_complex_vasp = {
     "static": os.path.join(module_dir, "../../test_files/lobster/complex_vasp_lobster/vasp")
 }

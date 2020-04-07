@@ -1,1 +1,0 @@
-These files are adapted to fit the purpose of testing the workflow and beeing small at the same time. This means that they do not belong to a specific VASP/Lobster run. Some input values had to be changed to fit the purpose.

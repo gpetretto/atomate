@@ -58,7 +58,7 @@ class TestLobsterRunToDb(AtomateTest):
     @classmethod
     def setUpClass(cls):
         cls.vasp_dir = os.path.join(module_dir, "./../../test_files", "lobster", "vasp_lobster_output")
-        cls.vasp_si_dir = os.path.join(module_dir, "./../../test_files", "lobster", "si_vasp_lobster2/lobster/outputs")
+        cls.vasp_si_dir = os.path.join(module_dir, "./../../test_files", "lobster", "si_vasp_lobster/lobster/outputs")
 
     def setUp(self):
         super(TestLobsterRunToDb, self).setUp(lpad=False)
@@ -117,7 +117,7 @@ class TestLobsterRunToDb(AtomateTest):
         with open("task_lobster.json") as f:
             load_dict = json.load(f)
         self.assertEqual(load_dict["formula_pretty"], 'Si')
-        self.assertListEqual(load_dict["output"]["chargespilling"], [0.0141, 0.0141])
+        self.assertListEqual(load_dict["output"]["chargespilling"], [0.0147, 0.0147])
 
 
 class TestRunLobster(AtomateTest):
