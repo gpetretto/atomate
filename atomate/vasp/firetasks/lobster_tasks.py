@@ -37,27 +37,28 @@ class WriteLobsterinputfromIO(FiretaskBase):
     """
     will write lobsterin from POSCAR, INCAR, POTCAR
     Required Params:
-        poscaraddress (str): address to POSCAR
-        poscaraddress (str): address to POSCAR
-        poscaraddress (str): address to POSCAR
+        poscar_path (str): path of POSCAR
+        incar_path (str): path of INCAR
+        potcar_path (str): address to POSCAR
         option (str): options as in Lobsterin.standard_calculations_from_vasp_files
     Optional Params:
         user_supplied_basis (dict): dictionary including the basis for each atom type
         user_lobsterin_settings (dict): dictionary that will be used to overwrite settings in Lobsterin dict
     """
-    required_params = ["poscaraddress", "incaraddress", "potcaraddress", "option"]
+    required_params = ["poscar_path", "incar_path", "potcar_path", "option"]
     optional_params = ["user_supplied_basis", "user_lobsterin_settings"]
 
     def run_task(self, fw_spec):
-        poscar = self.get("poscaraddress", "POSCAR")
-        incar = self.get("incaraddress", "INCAR")
-        potcar = self.get("potcaraddress", "POTCAR")
+        poscar_path = self.get("poscar_path", "POSCAR")
+        incar_path = self.get("incar_path", "INCAR")
+        potcar_path = self.get("potcar_path", "POTCAR")
         option = self.get("option", "standard")
         user_supplied_basis = self.get("user_supplied_basis", None)
         if user_supplied_basis is None:
-            lobsterinput = Lobsterin.standard_calculations_from_vasp_files(poscar, incar, potcar, option=option)
+            lobsterinput = Lobsterin.standard_calculations_from_vasp_files(poscar_path, incar_path, potcar_path,
+                                                                           option=option)
         else:
-            lobsterinput = Lobsterin.standard_calculations_from_vasp_files(poscar, incar, None, option=option,
+            lobsterinput = Lobsterin.standard_calculations_from_vasp_files(poscar_path, incar_path, None, option=option,
                                                                            dict_for_basis=user_supplied_basis)
         additional_input = self.get("user_lobsterin_settings", None)
         if additional_input:

@@ -206,7 +206,7 @@ class Testwf_lobster_test_basis(AtomateTest):
         rapidfire(self.lp)
 
         fw = self.lp.get_fw_by_id(fw_id=fw_id)
-        # print(fw.launches)
+
         with open(os.path.join(fw.launches[-1].launch_dir, "task_lobster.json")) as f:
             d = json.load(f)
         self._check_run(d, mode="lobsternormal")
@@ -230,18 +230,22 @@ class Testwf_lobster_test_basis(AtomateTest):
 
         # run the workflow
         rapidfire(self.lp)
-        d = self.get_task_collection(coll_name="lobster").find_one(filter={"material_id": "basis"})
+        d = self.get_task_collection(coll_name="lobster").find_one(filter={"material_id": "basis", "basis_id": 1})
         self._check_run(d, mode="lobsternormal")
 
         wf = self.lp.get_wf_by_fw_id(fw_id)
         self.assertTrue(all([s == 'COMPLETED' for s in wf.fw_states.values()]))
 
     def test_single_vasp_lobster(self):
+        # will only test lobster_calculation_1
         self._single_Vasp_Lobster(fake=True, fw_id=1)
         self._single_Lobster_db_insertion(fake=True, fw_id=4)
         # integration test
         # if VASP_CMD and LOBSTER_CMD:
-        #     self._single_Vasp_Lobster(fake=False, fw_id=5)
+        #     self._single_Vasp_Lobster(fake=False, fw_id=7)
+
+    def tearDown(self):
+        pass
 
 
 if __name__ == "__main__":

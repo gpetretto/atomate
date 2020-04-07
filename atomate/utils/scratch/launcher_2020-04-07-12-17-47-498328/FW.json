@@ -1,0 +1,106 @@
+{
+    "spec": {
+        "_tasks": [
+            {
+                "calc_loc": true,
+                "additional_files": [
+                    "OUTCAR",
+                    "vasprun.xml",
+                    "CHG",
+                    "CHGCAR",
+                    "CONTCAR",
+                    "DOSCAR",
+                    "EIGENVAL",
+                    "IBZKPT",
+                    "OSZICAR",
+                    "PCDAT",
+                    "PROCAR",
+                    "REPORT",
+                    "WAVECAR",
+                    "XDATCAR"
+                ],
+                "contcar_to_poscar": false,
+                "_fw_name": "{{atomate.vasp.firetasks.glue_tasks.CopyVaspOutputs}}"
+            },
+            {
+                "poscar_path": "POSCAR",
+                "incar_path": "INCAR",
+                "potcar_path": "POTCAR",
+                "option": "standard",
+                "user_supplied_basis": {
+                    "Cd": "4d 5s",
+                    "F": "2p 2s"
+                },
+                "user_lobsterin_settings": null,
+                "_fw_name": "{{atomate.vasp.firetasks.lobster_tasks.WriteLobsterinputfromIO}}"
+            },
+            {
+                "ref_dir": "/mnt/c/Users/jageorge/Projects/LobsterinAtomate/atomate/atomate/vasp/workflows/tests/../../test_files/lobster/complex_vasp_lobster/lobster_0",
+                "params_to_check": [
+                    "basisSet",
+                    "cohpGenerator",
+                    "basisfunctions"
+                ],
+                "_fw_name": "{{atomate.vasp.firetasks.lobster_tasks.RunLobsterFake}}"
+            },
+            {
+                "db_file": null,
+                "calc_loc": true,
+                "additional_fields": {
+                    "additional_fields": {
+                        "material_id": "id",
+                        "basis_id": 0,
+                        "number_lobster_runs": 2
+                    }
+                },
+                "_fw_name": "{{atomate.vasp.firetasks.lobster_tasks.LobsterRunToDb}}"
+            },
+            {
+                "name": "lobster_calculation_0",
+                "_fw_name": "{{atomate.common.firetasks.glue_tasks.PassCalcLocs}}"
+            }
+        ],
+        "calc_locs": [
+            {
+                "name": "static",
+                "filesystem": null,
+                "path": "/mnt/c/Users/jageorge/Projects/LobsterinAtomate/atomate/atomate/utils/scratch/launcher_2020-04-07-12-17-46-030203"
+            }
+        ]
+    },
+    "fw_id": 2,
+    "created_on": "2020-04-07T12:17:45.979404",
+    "updated_on": "2020-04-07T12:17:47.512076",
+    "launches": [
+        {
+            "fworker": {
+                "name": "manneback",
+                "category": "",
+                "query": "{}",
+                "env": {
+                    "vasp_cmd": "srun -n 24 /home/ucl/naps/jgeorge/bin/vasp_std",
+                    "lobster_cmd": null,
+                    "scratch_dir": null,
+                    "db_file": "/home/jgeorge/.fireworks/db.json"
+                }
+            },
+            "fw_id": 2,
+            "launch_dir": "/mnt/c/Users/jageorge/Projects/LobsterinAtomate/atomate/atomate/utils/scratch/launcher_2020-04-07-12-17-47-498328",
+            "host": "PC-1R0-150",
+            "ip": "127.0.1.1",
+            "trackers": [],
+            "action": null,
+            "state": "RUNNING",
+            "state_history": [
+                {
+                    "state": "RUNNING",
+                    "created_on": "2020-04-07T12:17:47.510977",
+                    "updated_on": "2020-04-07T12:17:47.510981"
+                }
+            ],
+            "launch_id": 2
+        }
+    ],
+    "state": "RUNNING",
+    "name": "CdF2-lobster_calculation_0"
+}

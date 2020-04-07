@@ -77,7 +77,7 @@ class LobsterFW(Firework):
         else:
             raise ValueError("One must specify a VASP calculation for Lobster run")
 
-        t.append(WriteLobsterinputfromIO(poscaraddress='POSCAR', incaraddress='INCAR', potcaraddress='POTCAR',
+        t.append(WriteLobsterinputfromIO(poscar_path='POSCAR', incar_path='INCAR', potcar_path='POTCAR',
                                          option=calculationtype, user_supplied_basis=user_supplied_basis,
                                          user_lobsterin_settings=lobsterin_key_dict))
 

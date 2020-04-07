@@ -1,17 +1,17 @@
 import json
 import os
-import unittest
 import shutil
-import gridfs
+import unittest
 from unittest import mock
 
+import gridfs
 from atomate.utils.testing import AtomateTest
 from atomate.utils.testing import DB_DIR
-from atomate.vasp.firetasks.lobster_tasks import WriteLobsterinputfromIO, LobsterRunToDb, RunLobster
 from atomate.vasp.database import VaspCalcDb
+from atomate.vasp.firetasks.lobster_tasks import WriteLobsterinputfromIO, LobsterRunToDb, RunLobster
 from fireworks.utilities.fw_serializers import load_object
-from monty.shutil import copy_r
 from monty.serialization import dumpfn
+from monty.shutil import copy_r
 from pymatgen.io.lobster import Lobsterin
 
 DB_FILE = os.path.join(DB_DIR, "db.json")
@@ -34,7 +34,7 @@ class TestWriteLobsterinputfromIO(AtomateTest):
         for fn in ["POSCAR.gz", "POTCAR.gz", "INCAR.gz"]:
             shutil.copy2(os.path.join(self.vasp_dir, fn), ".")
         ft = WriteLobsterinputfromIO(
-            poscaraddress="POSCAR.gz", potcaraddress="POTCAR.gz", incaraddress="INCAR.gz", option="standard")
+            poscar_path="POSCAR.gz", potcar_path="POTCAR.gz", incar_path="INCAR.gz", option="standard")
         ft = load_object(ft.to_dict())  # simulate database insertion
         ft.run_task({})
 
@@ -45,7 +45,7 @@ class TestWriteLobsterinputfromIO(AtomateTest):
             shutil.copy2(os.path.join(self.vasp_dir, fn), ".")
         # user supplied lobsterin inputs
         ft = WriteLobsterinputfromIO(
-            poscaraddress="POSCAR.gz", potcaraddress="POTCAR.gz", incaraddress="INCAR.gz",
+            poscar_path="POSCAR.gz", potcar_path="POTCAR.gz", incar_path="INCAR.gz",
             option="standard",
             user_lobsterin_settings={"COHPEndEnergy": 10.0})
         ft = load_object(ft.to_dict())  # simulate database insertion
