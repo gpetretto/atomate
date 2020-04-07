@@ -8,6 +8,8 @@ from atomate.vasp.firetasks.glue_tasks import CopyVaspOutputs
 from atomate.vasp.firetasks.lobster_tasks import WriteLobsterinputfromIO, RunLobster, LobsterRunToDb
 from fireworks import Firework
 from pymatgen.core.structure import Structure
+from custodian.custodian import ErrorHandler, Validator
+
 
 LOBSTER_CMD = ">>lobster_cmd<<"
 VASP_OUTPUT_FILES_without_PPKI = ["OUTCAR", "vasprun.xml", "CHG", "CHGCAR", "CONTCAR", "DOSCAR", "EIGENVAL", "IBZKPT",
@@ -24,7 +26,9 @@ class LobsterFW(Firework):
 
     def __init__(self, structure: Structure = None, name: str = "lobster_calculation", lobster_cmd: str = LOBSTER_CMD,
                  db_file: str = DB_FILE, delete_wavecar: bool = False,
-                 delete_wavecar_previous_fw: bool = False, strict_handlers_validators: bool = False,
+                 delete_wavecar_previous_fw: bool = False,
+                 handler_group: Union[List[ErrorHandler], str] = "default",
+                 validator_group: Union[List[Validator], str] = "default",
                  calculationtype: str = 'standard',
                  parents: Union[List[Firework], Firework] = None,
                  prev_calc_dir: str = None, prev_calc_loc: bool = True, user_supplied_basis: dict = None,
@@ -38,7 +42,12 @@ class LobsterFW(Firework):
             db_file (str): address to db_file
             delete_wavecar (bool): If True, WAVECAR will be deleted
             delete_wavecar_previous_fw (bool): If True, WAVECAR from VASP calc will be deleted
-            strict_handlers_validators (bool): If True, Charge spilling will be checked
+            handler_group (Union[List[ErrorHandler],str])): group of handlers to use. See handler_groups dict in the code for
+                the groups and complete list of handlers in each group. Alternatively, you can
+                specify a list of ErrorHandler objects.
+            validator_group (Union[List[Validator],str]): group of validators to use. See validator_groups dict in the
+                code for the groups and complete list of validators in each group. Alternatively, you can
+            specify a list of Validator objects.
             calculationtype (str): only 'standard' is fully implemented so far
             parents (Union[List[Firework],Firework]): parent Firework
             prev_calc_dir (str): address to previous vasp calculation
@@ -75,10 +84,10 @@ class LobsterFW(Firework):
         # runs lobster
         if delete_wavecar:
             t.append(RunLobster(lobster_cmd=lobster_cmd, gzip_output=True, gzip_WAVECAR=False,
-                                strict_handlers_validators=strict_handlers_validators))
+                                handler_group=handler_group, validator_group=validator_group))
         else:
             t.append(RunLobster(lobster_cmd=lobster_cmd, gzip_output=True, gzip_WAVECAR=True,
-                                strict_handlers_validators=strict_handlers_validators))
+                                handler_group=handler_group, validator_group=validator_group))
 
         # task to delete wavecar to avoid storage problems with wavecars -> WAVECARs without symmetry can be huge
         if delete_wavecar:
