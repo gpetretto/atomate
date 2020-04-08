@@ -34,7 +34,6 @@ refs_dirs_complex_lobster = {
 }
 
 
-# # TODO: work on this part! check that fake_lobster works correctly
 class TestWF_Lobster(AtomateTest):
     def setUp(self):
         super(TestWF_Lobster, self).setUp(lpad=True)
