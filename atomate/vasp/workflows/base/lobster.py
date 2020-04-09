@@ -12,9 +12,9 @@ import itertools
 import logging
 import os
 from collections import OrderedDict
+from typing import List
 
 from atomate.common.firetasks.glue_tasks import DeleteFilesPrevFolder
-from atomate.utils.utils import get_fws_and_tasks
 from atomate.vasp.config import VASP_CMD, DB_FILE
 from atomate.vasp.fireworks import StaticFW
 from atomate.vasp.fireworks.lobster import LobsterFW
@@ -34,8 +34,7 @@ logger = logging.getLogger(__name__)
 def get_wf_lobster(structure: Structure, calculationtype: str = 'standard', delete_all_wavecars: bool = True,
                    user_lobsterin_settings: dict = None, user_incar_settings: dict = None,
                    user_kpoints_settings: dict = None, user_supplied_basis: dict = None, material_id: str = 'id',
-                   isym: int = -1,
-                   c: dict = None) -> Workflow:
+                   isym: int = -1, c: dict = None, additional_outputs: List[str] = None) -> Workflow:
     """
     Creates a workflow for a static vasp calculation followed by a Lobster calculation.
 
@@ -50,6 +49,10 @@ def get_wf_lobster(structure: Structure, calculationtype: str = 'standard', dele
         material_id (str): id to identify material easily
         isym (int): isym setting during the vasp calculation, currently lobster can only deal with isym=-1
         c (dict): configurations dict which can include "VASP_CMD", "LOBSTER_CMD", "DB_FILE"
+        additional_outputs (list): list of additional files to be stored in the
+            results DB. They will be stored as files in gridfs. Examples are:
+            "ICOHPLIST.lobster" or "DOSCAR.lobster". Note that the file name
+            should be given with the full name and the correct capitalization.
 
     Returns: Workflow
 
@@ -76,7 +79,8 @@ def get_wf_lobster(structure: Structure, calculationtype: str = 'standard', dele
                          db_file=db_file, lobsterin_key_dict=user_lobsterin_settings,
                          user_supplied_basis=user_supplied_basis, handler_group="default",
                          validator_group="strict",
-                         lobstertodb_kwargs={"additional_fields": {"material_id": material_id}}))
+                         lobstertodb_kwargs={"additional_fields": {"material_id": material_id}},
+                         additional_outputs=additional_outputs))
 
     workflow = Workflow(fws, name="LobsterWorkflow")
     return workflow
@@ -91,7 +95,7 @@ def get_wf_lobster_test_basis(structure: Structure, calculationtype: str = 'stan
                               user_lobsterin_settings: dict = None,
                               user_incar_settings: dict = None,
                               user_kpoints_settings: dict = None, material_id: str = 'id',
-                              isym: int = -1) -> Workflow:
+                              isym: int = -1, additional_outputs: List[str] = None) -> Workflow:
     """
     creates workflow where all possible basis functions for one compound are tested
     at the end, the user has to decide which projection worked best (e.g., based on chargespilling)
@@ -107,7 +111,12 @@ def get_wf_lobster_test_basis(structure: Structure, calculationtype: str = 'stan
         user_incar_settings (dict): change incar settings with this dict
         user_kpoints_settings (dict): change kpoint settings with this dict
         material_id (str): id of the material
-        isym (int): isym setting during the VASP calculation, currently lobster can only deal with isym=-1, newer versions will be able to deal with 0
+        isym (int): isym setting during the VASP calculation, currently lobster can only deal with isym=-1,
+            newer versions will be able to deal with 0
+        additional_outputs (list): list of additional files to be stored in the
+            results DB. They will be stored as files in gridfs. Examples are:
+            "ICOHPLIST.lobster" or "DOSCAR.lobster". Note that the file name
+            should be given with the full name and the correct capitalization.
     Returns:
     """
 
@@ -157,7 +166,8 @@ def get_wf_lobster_test_basis(structure: Structure, calculationtype: str = 'stan
                       handler_group="default", validator_group="strict",
                       name="lobster_calculation_{}".format(ibasis),
                       lobstertodb_kwargs={"additional_fields": {"material_id": material_id, "basis_id": ibasis,
-                                                                "number_lobster_runs": len(all_basis)}}))
+                                                                "number_lobster_runs": len(all_basis)}},
+                      additional_outputs=additional_outputs))
 
     fws.extend(fws_lobster)
     # wavecar from static run is deleted, WAVECARs without symmetry can be huge!

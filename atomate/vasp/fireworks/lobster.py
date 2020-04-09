@@ -32,7 +32,8 @@ class LobsterFW(Firework):
                  calculationtype: str = 'standard',
                  parents: Union[List[Firework], Firework] = None,
                  prev_calc_dir: str = None, prev_calc_loc: bool = True, user_supplied_basis: dict = None,
-                 lobsterin_key_dict: dict = None, lobstertodb_kwargs: dict = None, **kwargs):
+                 lobsterin_key_dict: dict = None, lobstertodb_kwargs: dict = None,
+                 additional_outputs: List[str] = None, **kwargs):
         """
 
         Args:
@@ -55,6 +56,10 @@ class LobsterFW(Firework):
             user_supplied_basis (dict): the user can supply their own basis functions
             lobsterin_key_dict (dict): the user can supply additional changes to the lobsterin with {"COHPendEnergy":10.0}
             lobstertodb_kwargs (dict): dict that will be saved in the mongodb database
+            additional_outputs (List[str]): list of additional files to be stored in the
+                results DB. They will be stored as files in gridfs. Examples are:
+                "ICOHPLIST.lobster" or "DOSCAR.lobster". Note that the file name
+                should be given with the full name and the correct capitalization.
             **kwargs:
         """
 
@@ -97,7 +102,8 @@ class LobsterFW(Firework):
 
         # Will save Lobster Calculation in Database
         t.append(LobsterRunToDb(db_file=db_file, calc_loc=calc_loc,
-                                additional_fields=lobstertodb_kwargs))
+                                additional_fields=lobstertodb_kwargs,
+                                additional_outputs=additional_outputs))
 
         # passes information to next firetask
         t.append(PassCalcLocs(name=name))

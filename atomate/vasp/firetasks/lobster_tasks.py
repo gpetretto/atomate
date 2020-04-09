@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import shutil
+import warnings
 
 from atomate.common.firetasks.glue_tasks import get_calc_loc
 from atomate.utils.utils import env_chk, get_meta_from_structure
@@ -146,14 +147,32 @@ class LobsterRunToDb(FiretaskBase):
             Supports env_chk. Default: write data to JSON file.
         fw_spec_field (str): if set, will update the task doc with the contents
             of this key in the fw_spec.
-        store_all_outputs (bool): if True the output files that are not parsed
-            with python objects will be stored in the gridfs of the chosen DB
-            as simple files. Default False.
+        additional_outputs (list): list of additional files to be stored in the
+            results DB. They will be stored as files in gridfs. Examples are:
+            "ICOHPLIST.lobster" or "DOSCAR.lobster". Note that the file name
+            should be given with the full name and the correct capitalization.
     """
     # TODO: which ones are required, which are optional
     # TODO: check if other files can be saved as well
     optional_params = ["calc_dir", "calc_loc", "additional_fields", "db_file", "fw_spec_field",
-                       "store_all_outputs"]
+                       "additional_outputs"]
+
+    std_additional_outputs = ["ICOHPLIST.lobster", "ICOOPLIST.lobster", "COHPCAR.lobster",
+                                   "COOPCAR.lobster", "GROSSPOP.lobster", "CHARGE.lobster",
+                                   "DOSCAR.lobster"]
+
+    def __init__(self, *args, **kwargs):
+        # override the original __init__ method to check the values of
+        # "additional_outputs" and raise warnings in case of potentially
+        # misspelled names.
+        super(LobsterRunToDb, self).__init__(*args, **kwargs)
+
+        additional_outputs = self.get("additional_outputs", [])
+        if additional_outputs:
+            for ao in additional_outputs:
+                if ao not in self.std_additional_outputs:
+                    warnings.warn(f"{ao} not in the list of standard additional outputs. "
+                                  f"Check that you did not misspell it.")
 
     def run_task(self, fw_spec):
 
@@ -227,21 +246,21 @@ class LobsterRunToDb(FiretaskBase):
         else:
             db = VaspCalcDb.from_db_file(db_file, admin=True)
             db.collection = db.db["lobster"]
-            if self.get("store_all_outputs", False):
-                files_to_save = ["ICOHPLIST", "ICOOPLIST", "COHPCAR",
-                                 "COOPCAR", "GROSSPOP", "CHARGE", "DOSCAR"]
-                for fn in files_to_save:
-                    cn = "lobster_" + fn.lower()
+            additional_outputs = self.get("additional_outputs", None)
+            if additional_outputs:
+                for filename in additional_outputs:
+
                     fs_id = None
-                    if os.path.isfile(fn + ".lobster"):
-                        fs_id = put_file_in_gridfs(fn + ".lobster", db, collection_name=cn,
+                    if os.path.isfile(filename):
+                        fs_id = put_file_in_gridfs(filename, db, collection_name="lobster_files",
                                                    compress=True)
-                    elif os.path.isfile(fn + ".lobster.gz"):
-                        fs_id = put_file_in_gridfs(fn + ".lobster", db, collection_name=cn,
+                    elif os.path.isfile(filename + ".gz"):
+                        fs_id = put_file_in_gridfs(filename + ".gz", db, collection_name="lobster_files",
                                                    compress=False, compression_type="zlib")
 
                     if fs_id:
-                        task_doc[fn.lower() + "_id"] = fs_id
+                        key_name = filename.split(".")[0].lower() + "_id"
+                        task_doc[key_name] = fs_id
 
             db.insert(task_doc)
             logger.info("Lobster calculation is complete.")

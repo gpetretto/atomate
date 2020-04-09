@@ -63,6 +63,16 @@ class TestLobsterRunToDb(AtomateTest):
     def setUp(self):
         super(TestLobsterRunToDb, self).setUp(lpad=False)
 
+    def tearDown(self):
+        # remove the collections if needed and if possible
+        try:
+            db = self.get_task_database()
+            for coll in db.collection_names():
+                if coll != "system.indexes":
+                    db[coll].drop()
+        except:
+            pass
+
     def test_jsonfile(self):
         copy_r(self.vasp_dir, ".")
         ft = LobsterRunToDb(calc_loc=True)
@@ -80,7 +90,7 @@ class TestLobsterRunToDb(AtomateTest):
                                     'Are the credentials correct?')
 
         copy_r(self.vasp_dir, ".")
-        ft = LobsterRunToDb(calc_loc=True, db_file=DB_FILE, store_all_outputs=False)
+        ft = LobsterRunToDb(calc_loc=True, db_file=DB_FILE)
         ft.run_task({"calc_locs": [{"path": "test"}]})
         coll = self.get_task_collection("lobster")
         load_dict = coll.find_one({"formula_pretty": "K2Sn2O3"})
@@ -88,7 +98,7 @@ class TestLobsterRunToDb(AtomateTest):
         self.assertListEqual(load_dict["output"]["chargespilling"], [0.008, 0.008])
         self.assertNotIn("lobster_icohplist", load_dict)
 
-    def test_mongodb_all_files(self):
+    def test_mongodb_more_files(self):
         try:
             VaspCalcDb.from_db_file(DB_FILE)
         except:
@@ -96,17 +106,20 @@ class TestLobsterRunToDb(AtomateTest):
                                     'Are the credentials correct?')
 
         copy_r(self.vasp_dir, ".")
-        ft = LobsterRunToDb(calc_loc=True, db_file=DB_FILE, store_all_outputs=True)
+        with self.assertWarnsRegex(UserWarning, ".*wrong_file.*"):
+            ft = LobsterRunToDb(calc_loc=True, db_file=DB_FILE,
+                                additional_outputs=["ICOHPLIST.lobster", "COOPCAR.lobster", "wrong_file"])
         ft.run_task({"calc_locs": [{"path": "test"}]})
         coll = self.get_task_collection("lobster")
         load_dict = coll.find_one({"formula_pretty": "K2Sn2O3"})
         self.assertEqual(load_dict["formula_pretty"], 'K2Sn2O3')
         self.assertListEqual(load_dict["output"]["chargespilling"], [0.008, 0.008])
         db = self.get_task_database()
-        for fn in ["ICOHPLIST", "ICOOPLIST", "COHPCAR",
-                   "COOPCAR", "GROSSPOP", "CHARGE", "DOSCAR"]:
+        gfs = gridfs.GridFS(db, "lobster_files")
+        results = gfs.find({}).count()
+        self.assertEqual(results, 2)
+        for fn in ["ICOHPLIST", "COOPCAR"]:
             oid = load_dict[fn.lower() + "_id"]
-            gfs = gridfs.GridFS(db, "lobster_" + fn.lower())
             results = gfs.find({"_id": oid}).count()
             self.assertEqual(results, 1)
 

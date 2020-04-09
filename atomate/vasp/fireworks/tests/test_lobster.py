@@ -27,12 +27,17 @@ class TestLobsterFireworks(unittest.TestCase):
                            [0.00, -2.2171384943, 3.1355090603]])
         self.structure = Structure(lattice, ["Si", "Si"], coords)
 
-    def testStaticFW(self):
+    def testLobsterFW(self):
         static_fw = StaticFW(structure=self.structure).name
-        self.assertEqual(LobsterFW(structure=self.structure, parents=static_fw).name, "Si-lobster_calculation")
-        lobster_fw = LobsterFW(prev_calc_dir="/")
+        self.assertEqual(LobsterFW(structure=self.structure, parents=static_fw).name, "Si-lobster_calculation",)
+        lobster_fw = LobsterFW(prev_calc_dir="/", delete_wavecar=True, delete_wavecar_previous_fw=True)
         self.assertEqual(lobster_fw.name, "unknown-lobster_calculation")
         self.assertEqual(lobster_fw.tasks[0]["calc_dir"], "/")
+        self.assertEqual(len(lobster_fw.tasks), 7)
+
+        lobster_fw = LobsterFW(prev_calc_dir="/", delete_wavecar=False, delete_wavecar_previous_fw=False)
+        self.assertEqual(len(lobster_fw.tasks), 5)
+
         # check for ValueError when no parent or calc_dir are provided
         with self.assertRaises(ValueError):
             LobsterFW()
